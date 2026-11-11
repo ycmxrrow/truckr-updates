@@ -39,9 +39,15 @@
 
   const r0 = await chrome.runtime.sendMessage({ type: 'GET_BOOK', maxAge: 60000 });
   if (r0) { showStatus(r0.status, (r0.book || []).length); }
-  const S = Object.assign({}, TR.DEFAULTS, (r0 && r0.settings) || {});
-  $('greeting').value = S.greeting; $('puHours').value = S.puHours; $('delHours').value = S.delHours;
-  $('showDates').checked = !!S.showDates; $('noTarpLine').checked = !!S.noTarpLine; $('replyAll').checked = !!S.replyAll;
+  let S = Object.assign({}, TR.DEFAULTS, (r0 && r0.settings) || {});
+  const fill = v => {
+    $('greeting').value = v.greeting; $('puHours').value = v.puHours; $('delHours').value = v.delHours; $('coveredText').value = v.coveredText || '';
+    $('showDates').checked = !!v.showDates; $('noTarpLine').checked = !!v.noTarpLine; $('replyAll').checked = !!v.replyAll;
+  };
+  fill(S);
+  const show = settings => { $('vMain').hidden = settings; $('vSettings').hidden = !settings; $('gear').style.visibility = settings ? 'hidden' : 'visible'; };
+  $('gear').onclick = () => { fill(S); $('saved').textContent = ''; show(true); };
+  $('back').onclick = () => show(false);
 
   // fresh numbers every time the popup opens (no button): sync in the background, the list updates when it lands
   chrome.runtime.sendMessage({ type: 'SYNC', mode: 'light' }).catch(() => {});
@@ -52,10 +58,13 @@
   });
   $('save').onclick = async () => {
     const s = { greeting: $('greeting').value, puHours: TR.hoursRange($('puHours').value) || TR.DEFAULTS.puHours, delHours: TR.hoursRange($('delHours').value) || TR.DEFAULTS.delHours,
+      coveredText: $('coveredText').value.trim() || TR.DEFAULTS.coveredText,
       showDates: $('showDates').checked, noTarpLine: $('noTarpLine').checked, replyAll: $('replyAll').checked };
     await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: s });
+    S = Object.assign({}, TR.DEFAULTS, s); fill(S);
     $('saved').textContent = 'Saved'; setTimeout(() => { $('saved').textContent = ''; }, 2000);
   };
+  $('reset').onclick = () => { fill(TR.DEFAULTS); $('saved').textContent = 'Defaults filled in. Click Save to keep them.'; };
   const { replies = [] } = await chrome.storage.local.get('replies');
   $('recent').innerHTML = replies.slice(0, 8).map(r => `<div>${esc(new Date(r.at).toLocaleString([], { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }))} · ${esc(r.lane)} · ${esc(r.to)}${r.mc ? ' · MC ' + esc(r.mc) : ''}${r.ok ? '' : ' · (copied)'}</div>`).join('') || 'None yet.';
 })();

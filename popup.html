@@ -25,32 +25,52 @@
   .grid label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}
   label.chk{flex-direction:row;align-items:center;gap:6px;font-size:12px;color:var(--fg)}
   #updMsg{display:none;padding:8px 14px;background:rgba(255,94,20,.14);border-bottom:1px solid var(--line);font-size:12px}
+  .icon{background:transparent;border:1px solid var(--line);color:var(--fg);padding:4px 7px;display:inline-flex;align-items:center;justify-content:center}
+  .icon:hover{background:var(--panel);border-color:var(--fide)}
+  .icon svg{width:16px;height:16px;fill:currentColor}
+  .hdr-r{display:flex;gap:8px;align-items:center}
+  .view[hidden]{display:none}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .stack label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  .stack input[type=text],.stack textarea{width:100%}
+  textarea{font:13px "Segoe UI",Arial;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:4px 6px;box-sizing:border-box;resize:vertical;min-height:44px}
+  textarea:focus{outline:none;border-color:var(--fide)}
+  .stack label.chk{flex-direction:row;align-items:center;gap:8px;font-size:12px;color:var(--fg)}
+  .sub{font-size:11px;color:var(--muted);margin-top:1px}
   ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
 </style></head>
 <body>
 <header><b>TRUCK<span class="r">R</span> <span class="by">by Collin Morrow</span> <span id="ver" class="by"></span></b>
-  <span><button id="upd">Check for updates</button></span></header>
+  <span class="hdr-r"><button id="upd">Check for updates</button>
+    <button id="gear" class="icon" title="Reply settings" aria-label="Reply settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.63l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.74 8.85a.5.5 0 0 0 .12.63l2.03 1.58c-.05.31-.08.63-.08.94s.02.63.07.94l-2.03 1.58a.5.5 0 0 0-.12.63l1.92 3.32c.13.22.39.3.6.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.63l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg></button></span></header>
 <div id="updMsg"></div>
+<div id="vMain" class="view">
 <section>
   <h4>Connected</h4>
   <div class="stat" id="stat"></div>
   <div class="muted" id="syncMsg">Syncs on its own every minute while Outlook is open, and right away when a carrier asks about a lane it doesn't know yet.</div>
 </section>
 <section>
-  <h4>Reply settings</h4>
-  <div class="grid">
-    <label>Greeting<input id="greeting"></label>
-    <label>Default hours (when a load has none)<span style="display:flex;gap:6px"><input id="puHours" style="width:50%" placeholder="PU 07:00-15:00"><input id="delHours" style="width:50%" placeholder="DEL 07:00-15:00"></span></label>
-    <label class="chk"><input type="checkbox" id="showDates"> Put the date on PU / DEL lines</label>
-    <label class="chk"><input type="checkbox" id="noTarpLine"> Open deck with no tarps: "No tarps - strap n go"</label>
-    <label class="chk"><input type="checkbox" id="replyAll"> Use Reply all (default: Reply)</label>
-  </div>
-  <div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button id="save">Save</button><span class="muted" id="saved"></span></div>
-</section>
-<section>
   <h4>Recent replies</h4>
   <div id="recent" class="muted"></div>
 </section>
+</div>
+<div id="vSettings" class="view" hidden>
+<section style="display:flex;align-items:center;gap:10px">
+  <button id="back" class="icon" title="Back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+  <b style="font-size:14px">Reply settings</b>
+</section>
+<section class="stack">
+  <label>Greeting<input type="text" id="greeting"><span class="sub">First line of every reply.</span></label>
+  <label>Default pickup hours (when a load has none)<input type="text" id="puHours" placeholder="07:00-15:00"></label>
+  <label>Default delivery hours (when a load has none)<input type="text" id="delHours" placeholder="07:00-15:00"></label>
+  <label>Reply when a load is covered or cancelled<textarea id="coveredText" rows="2"></textarea></label>
+  <label class="chk"><input type="checkbox" id="showDates"> Put the date on PU / DEL lines</label>
+  <label class="chk"><input type="checkbox" id="noTarpLine"> Open deck with no tarps: add "No tarps - strap n go"</label>
+  <label class="chk"><input type="checkbox" id="replyAll"> Use Reply all (default: Reply)</label>
+  <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><button id="save">Save</button><button id="reset" class="ghost">Reset to defaults</button><span class="muted" id="saved"></span></div>
+</section>
+</div>
 <script src="lib/truckr.js"></script>
 <script src="popup.js"></script>
 </body></html>
