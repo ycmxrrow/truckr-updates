@@ -1,16 +1,16 @@
 {
- "version": "1.1.0",
+ "version": "1.1.1",
  "files": {
-  "popup.html": 4115,
-  "popup.js": 5924,
+  "popup.html": 3857,
+  "popup.js": 4528,
   "manifest.json": 1444,
-  "README.txt": 5062,
-  "background.js": 15139,
-  "content/outlook.js": 23103,
+  "README.txt": 5407,
+  "background.js": 16238,
+  "content/outlook.js": 22919,
   "icons/32.png": 865,
   "icons/16.png": 435,
   "icons/128.png": 2266,
   "icons/48.png": 1129,
-  "lib/truckr.js": 42859
+  "lib/truckr.js": 43072
  }
 }

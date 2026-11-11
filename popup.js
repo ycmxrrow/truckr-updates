@@ -34,28 +34,22 @@
       p.push(`<span class="pill">synced ${esc(new Date(st.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</span>`);
     }
     $('stat').innerHTML = p.join('');
-    $('n').textContent = n;
-  }
-  function showBook(book) {
-    $('rows').innerHTML = (book || []).map(l => `<tr><td>${esc(TR.laneText(l.origin, l.dest))}${l.picks && l.picks.length + l.drops.length > 2 ? ` <span class="muted">(${l.picks.length}PU ${l.drops.length}DEL)</span>` : ''}<div class="muted">${esc(l.customer || (l.src === 'manual' ? 'saved by you' : ''))}${l.sf ? ` · <span style="color:${l.covered || l.cancelled ? '#ff6b6b' : '#7fdc98'}">${esc(l.sf.name)} ${esc(l.sf.status)}</span>` : ''}${(l.checks || []).filter(c => c.k !== 'status').length ? ' · <span style="color:#ffd257">check ' + esc(l.checks.filter(c => c.k !== 'status').map(c => c.k).join(', ')) + '</span>' : ''}${l.down ? ' · not on the boards now' : ''}</div></td>
-      <td>${esc(TR.md(l.pickupDate))}</td><td>${esc(l.equipmentName || l.equipment || '')}</td>
-      <td>${l.weight ? Math.round(l.weight).toLocaleString() : '—'} / ${l.length ? Math.round(l.length) + "'" : '—'}</td><td>${l.rate ? esc(TR.money(l.rate)) : '<span style="color:#ff6b6b">none</span>'}</td>
-      <td>${esc((l.boards || []).map(b => b === 'dat' ? 'DAT' : 'TS').join('+') || (l.src === 'salesforce' ? 'SF only' : '—'))}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No loads yet. Post with SPOTR, or click Sync with DAT / Truckstop open in a tab.</td></tr>';
-  }
+      }
+
 
   const r0 = await chrome.runtime.sendMessage({ type: 'GET_BOOK', maxAge: 60000 });
-  if (r0) { showStatus(r0.status, (r0.book || []).length); showBook(r0.book); }
+  if (r0) { showStatus(r0.status, (r0.book || []).length); }
   const S = Object.assign({}, TR.DEFAULTS, (r0 && r0.settings) || {});
   $('greeting').value = S.greeting; $('puHours').value = S.puHours; $('delHours').value = S.delHours;
   $('showDates').checked = !!S.showDates; $('noTarpLine').checked = !!S.noTarpLine; $('replyAll').checked = !!S.replyAll;
 
-  $('sync').onclick = async () => {
-    $('sync').disabled = true; $('syncMsg').textContent = 'Pulling your posts from DAT + Truckstop…';
-    const r = await chrome.runtime.sendMessage({ type: 'SYNC', mode: 'full' });
-    $('sync').disabled = false;
-    $('syncMsg').textContent = r && r.ok ? `Done in ${(r.status.ms / 1000).toFixed(1)}s` : 'Sync failed: ' + ((r && r.error) || 'no answer');
-    if (r) { showStatus(r.status, (r.book || []).length); showBook(r.book); }
-  };
+  // fresh numbers every time the popup opens (no button): sync in the background, the list updates when it lands
+  chrome.runtime.sendMessage({ type: 'SYNC', mode: 'light' }).catch(() => {});
+  chrome.storage.onChanged.addListener(async ch => {
+    if (!ch.book && !ch.bookStatus) return;
+    const { book = [], bookStatus } = await chrome.storage.local.get(['book', 'bookStatus']);
+    showStatus(bookStatus, book.length);
+  });
   $('save').onclick = async () => {
     const s = { greeting: $('greeting').value, puHours: TR.hoursRange($('puHours').value) || TR.DEFAULTS.puHours, delHours: TR.hoursRange($('delHours').value) || TR.DEFAULTS.delHours,
       showDates: $('showDates').checked, noTarpLine: $('noTarpLine').checked, replyAll: $('replyAll').checked };

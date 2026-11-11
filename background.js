@@ -83,12 +83,12 @@ async function sync(mode) {
       if (Object.keys(keep).length) { const { lastLive = {} } = await chrome.storage.local.get('lastLive'); await chrome.storage.local.set({ lastLive: Object.assign(lastLive, keep) }); }
       const { lastLive: ll } = await chrome.storage.local.get('lastLive'); st.lastLive = ll;
       const book = TR.buildBook(r, st);
-      const customers = [...new Set((r.posts || []).map(p => (p.senderEmail || '').toLowerCase()).filter(Boolean))];
+      const customers = [...new Set((r.posts || []).map(p => (p.senderEmail || '').toLowerCase()).concat(r.customers || []).filter(Boolean))]; // everyone SPOTR treats as a customer
       // a sample of what each board sent, for fixing field mapping if DAT / Truckstop change their data
       const sample = {}; Object.entries(r.live || {}).forEach(([k, v]) => { if (v && v.loads && v.loads[0]) sample[k] = JSON.stringify(v.loads[0]).slice(0, 6000); });
       status.ms = Date.now() - t0; status.n = book.length;
       await chrome.storage.local.set({ book, bookAt: Date.now(), bookStatus: status, customers, boardSample: sample });
-      if (mode === 'full') lastFull = Date.now();
+      if (mode === 'full') { lastFull = Date.now(); chrome.storage.session.set({ lastFull }).catch(() => {}); }
       return { ok: true, n: book.length, status };
     }
     // SPOTR not reachable: Salesforce + the last book + your saved loads
@@ -194,11 +194,20 @@ chrome.alarms.create('truckr-sync', { periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener(async a => {
   if (a.name !== 'truckr-sync') return;
   const tabs = await chrome.tabs.query({ url: ['https://outlook.office.com/*', 'https://outlook.office365.com/*', 'https://outlook.cloud.microsoft/*', 'https://outlook.live.com/*'] });
-  if (!tabs.length) return;
-  await sync(Date.now() - lastFull > 15 * 60000 ? 'full' : 'light');
+  if (!tabs.length) return; // nothing to answer without Outlook open
+  await sync(Date.now() - lastFull > 10 * 60000 ? 'full' : 'light');
 });
 
-chrome.runtime.onStartup.addListener(() => { sync('light'); });
+chrome.runtime.onStartup.addListener(() => { sync('full'); });
+chrome.storage.session.get('lastFull').then(r => { if (r && r.lastFull) lastFull = r.lastFull; }).catch(() => {});
+
+// also sync on its own whenever Outlook, DAT One, Truckstop or Salesforce finishes loading in a tab,
+// or you switch to your Outlook tab (a new post / new Salesforce load shows up without waiting for the minute)
+const WATCH = /^https:\/\/(outlook\.(office|office365|live)\.com|outlook\.cloud\.microsoft|one\.dat\.com|(main|app)\.truckstop\.com|[^/]*\.(lightning\.force|my\.salesforce)\.com)\//i;
+let tabT = null;
+const soon = () => { clearTimeout(tabT); tabT = setTimeout(() => sync('light'), 1500); };
+chrome.tabs.onUpdated.addListener((id, info, tab) => { if (info.status === 'complete' && WATCH.test(tab.url || '')) soon(); });
+chrome.tabs.onActivated.addListener(async ({ tabId }) => { try { const t = await chrome.tabs.get(tabId); if (/outlook/i.test(t.url || '')) soon(); } catch (e) { /* tab gone */ } });
 chrome.runtime.onInstalled.addListener(async details => {
   if (details.reason === 'update') await chrome.storage.local.set({ justUpdated: { from: details.previousVersion, to: chrome.runtime.getManifest().version, at: Date.now() } });
   const { rules } = await chrome.storage.local.get('rules'); if (rules) TR.setRules(rules);

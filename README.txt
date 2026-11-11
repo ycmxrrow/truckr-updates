@@ -62,7 +62,13 @@ CARRIER EMAILS TRUCKR READS (from your Carriers folder)
 
 IF IT CAN'T TELL WHICH LOAD
 - The bar shows "Which load is this?" with your closest loads. Pick one.
-- Nothing close: click Sync (pulls DAT + Truckstop now) or "Enter details" to type the load once.
+- Nothing close: TRUCKR checks DAT, Truckstop and Salesforce again on its own right away; if it's still not
+  there, "Enter details" types the load once.
+
+SYNCING IS AUTOMATIC
+- Every minute while Outlook is open (a full DAT + Truckstop pull every 10 minutes), whenever Outlook, DAT,
+  Truckstop or Salesforce loads in a tab, when you switch to Outlook, and when a carrier asks about a lane
+  TRUCKR doesn't know yet. There is no sync button.
 - Missing rate on a post: the bar asks for it before Reply.
 - "Edit load" changes hours / weight / commodity / rate for that load, and every later reply uses it.
 
