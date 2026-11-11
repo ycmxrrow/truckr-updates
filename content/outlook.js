@@ -137,7 +137,7 @@
     const opts = m.ranked.map((r, i) => `<option value="${i}">${esc(summary(r.load))}</option>`).join('');
     root.innerHTML = `<style>${CSS}</style><div class="bar">
       <div class="top"><span class="logo">TRUCK<span>R</span></span>${chips.join('')}<span class="sp"></span><button class="x" data-x title="Hide for this email">✕</button></div>
-      <div class="row" data-pickrow>${m.ranked.length ? `<select data-pick>${opts}${''}<option value="new">+ Not listed: enter this load's details</option></select>` : `<span class="muted">No posted load matches${inq.lane ? ' ' + esc(TR.laneText(inq.lane.o, inq.lane.d)) : ''}.</span><button class="ghost" data-new>Enter details</button>`}<button class="ghost" data-sync title="Pull your live posts from DAT + Truckstop now">Sync</button><span class="muted" data-st></span></div>
+      <div class="row" data-pickrow>${m.ranked.length ? `<select data-pick>${opts}${''}<option value="new">+ Not listed: enter this load's details</option></select>` : `<span class="muted">No posted load matches${inq.lane ? ' ' + esc(TR.laneText(inq.lane.o, inq.lane.d)) : ''}.</span><button class="ghost" data-new>Enter details</button>`}<span class="muted" data-st></span></div>
       <div data-main>
         <div class="row" data-sfrow></div>
         <div class="row" data-needrow></div>
@@ -168,7 +168,7 @@
         : (load.src !== 'salesforce' && STATUS && STATUS.sf && STATUS.sf.ok ? '<span class="chip warn">not built in Salesforce yet</span>' : '');
       const us = $('[data-usesf]'); if (us) us.onclick = () => { load = TR.useSf(load); host._load = load; render(); };
       const miss = (load.covered || load.cancelled) ? [] : TR.missing(load);
-      $('[data-needrow]').innerHTML = miss.includes('rate') ? `<span class="muted">No rate on this post:</span> Rate $<input data-rate class="need" size="7" placeholder="1,600"><span class="muted">${inq.offer && inq.offer !== 'posted' ? 'carrier offered ' + esc(TR.money(inq.offer)) : ''}</span>` : '';
+      $('[data-needrow]').innerHTML = !load.rate && !load.covered && !load.cancelled && !ctx.load?.rate ? `<span class="muted">No target rate, so the reply asks for their best rate. Or add one:</span> Rate $<input data-rate size="7" placeholder="1,600"><span class="muted">${inq.offer && inq.offer !== 'posted' ? 'carrier offered ' + esc(TR.money(inq.offer)) : ''}</span>` : '';
       const ri = $('[data-rate]');
       if (ri) ri.oninput = () => { const v = Number(ri.value.replace(/[$,\s]/g, '')); load = Object.assign({}, load, { rate: v > 0 ? v : null }); txt.value = TR.buildReply(load, inq, SETTINGS); };
       txt.value = TR.buildReply(load, inq, SETTINGS); dirty = false;
@@ -182,16 +182,11 @@
       pick.onchange = () => { if (pick.value === 'new') { load = null; render(); openEditor(true); return; } load = pick.value === '' ? null : m.ranked[Number(pick.value)].load; host._load = load; render(); };
     }
     const nb = $('[data-new]'); if (nb) nb.onclick = () => openEditor(true);
-    $('[data-sync]').onclick = async () => {
-      const st = $('[data-st]'); st.textContent = 'Syncing DAT + Truckstop…';
-      const r = await chrome.runtime.sendMessage({ type: 'SYNC', mode: 'full' }).catch(() => null);
-      st.textContent = r && r.ok ? `${r.n} loads up` : 'Sync failed: ' + ((r && (r.error || (r.status && r.status.error))) || 'no answer');
-    };
+    if (!m.best && !host._synced) $('[data-st]').textContent = 'Checking DAT, Truckstop and Salesforce for this lane…';
     $('[data-x]').onclick = () => { host._dismissed = true; host.style.display = 'none'; };
     $('[data-copy]').onclick = async () => { try { await navigator.clipboard.writeText(txt.value); msg('Copied'); } catch (e) { msg("Couldn't copy", true); } };
     const doReply = async () => {
       if (!load) { msg('Pick the load first', true); return false; }
-      if (!load.covered && !load.cancelled && !load.rate && !/Rate - \$\d/.test(txt.value)) { msg('Add the rate first', true); const ri = $('[data-rate]'); if (ri) ri.focus(); return false; }
       const ok = await replyWith(body, txt.value, !!SETTINGS.replyAll);
       if (ok) msg('Reply opened. Review it and hit Send.');
       else { try { await navigator.clipboard.writeText(txt.value); } catch (e) { /* */ } msg("Couldn't open the reply box, so it's copied. Click Reply and paste.", true); }
@@ -249,6 +244,8 @@
       const subject = subjectFor(body), from = senderFor(body);
       const k = hashOf(subject + '|' + from.email + '|' + text.slice(0, 600)) + ':' + bookGen;
       const existing = body.previousElementSibling && body.previousElementSibling.nodeName === 'TRUCKR-BAR' ? body.previousElementSibling : null;
+      // SPOTR's email (a customer's load / quote): TRUCKR never shows on the same email
+      if (body.parentElement && body.parentElement.querySelector(':scope > fide-spot-post')) { body.parentElement.querySelectorAll(':scope > truckr-bar').forEach(e => e.remove()); continue; }
       if (existing && (existing.dataset.k === k || existing._dismissed || existing._busy)) continue; // never redraw while you're typing in it
       if (!from.email && !existing) { setTimeout(kick, 600); } // the From line may still be loading
       const inq = TR.parseInquiry({ subject, from, body: text }, { customers: CUSTOMERS });
