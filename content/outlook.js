@@ -238,10 +238,12 @@
   let busy = false;
   async function scan() {
     if (!alive()) { stop(); return; }
+    const seenConv = new Set(); // one TRUCKR bar per conversation (the newest carrier message), never one per message
     for (const body of bodies()) {
       const text = body.innerText || '';
       if (text.length < 3) continue;
       const subject = subjectFor(body), from = senderFor(body);
+      const conv = subject.replace(/^(?:\s*(?:re|fw|fwd)\s*:\s*)+/i, '').trim().toLowerCase();
       const k = hashOf(subject + '|' + from.email + '|' + text.slice(0, 600)) + ':' + bookGen;
       const existing = body.previousElementSibling && body.previousElementSibling.nodeName === 'TRUCKR-BAR' ? body.previousElementSibling : null;
       // SPOTR's email (a customer's load / quote): TRUCKR never shows on the same email
@@ -252,7 +254,9 @@
       inq.body = text;
       if (inq.skip) { if (existing) existing.remove(); continue; }
       const m = TR.match(inq, BOOK);
-      if (!inq.lane && !m.ranked.length) { if (existing) existing.remove(); continue; } // not about a load
+      if (!inq.lane && !m.best) { if (existing) existing.remove(); continue; } // no lane and no sure load: not something TRUCKR should guess at
+      if (conv && seenConv.has(conv)) { if (existing) existing.remove(); continue; }
+      if (conv) seenConv.add(conv);
       const host = existing || document.createElement('truckr-bar');
       host.dataset.k = k;
       if (!existing) body.parentElement.insertBefore(host, body);
