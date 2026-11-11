@@ -211,6 +211,9 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => { try { const t = await
 chrome.runtime.onInstalled.addListener(async details => {
   if (details.reason === 'update') await chrome.storage.local.set({ justUpdated: { from: details.previousVersion, to: chrome.runtime.getManifest().version, at: Date.now() } });
   const { rules } = await chrome.storage.local.get('rules'); if (rules) TR.setRules(rules);
+  // 1.1.5: dates on the PU / DEL lines are on by default now (you can still turn them off in the settings)
+  const { settings } = await chrome.storage.local.get('settings');
+  if (settings && !settings.datesOn) await chrome.storage.local.set({ settings: Object.assign({}, settings, { showDates: true, datesOn: true }) });
   // put the new version into Outlook tabs that are already open (no refresh needed)
   for (const cs of chrome.runtime.getManifest().content_scripts) {
     const tabs = await chrome.tabs.query({ url: cs.matches });

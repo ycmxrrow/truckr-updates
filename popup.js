@@ -59,7 +59,7 @@
   $('save').onclick = async () => {
     const s = { greeting: $('greeting').value, puHours: TR.hoursRange($('puHours').value) || TR.DEFAULTS.puHours, delHours: TR.hoursRange($('delHours').value) || TR.DEFAULTS.delHours,
       coveredText: $('coveredText').value.trim() || TR.DEFAULTS.coveredText,
-      showDates: $('showDates').checked, noTarpLine: $('noTarpLine').checked, replyAll: $('replyAll').checked };
+      showDates: $('showDates').checked, datesOn: true, noTarpLine: $('noTarpLine').checked, replyAll: $('replyAll').checked };
     await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: s });
     S = Object.assign({}, TR.DEFAULTS, s); fill(S);
     $('saved').textContent = 'Saved'; setTimeout(() => { $('saved').textContent = ''; }, 2000);
