@@ -65,6 +65,4 @@
     $('saved').textContent = 'Saved'; setTimeout(() => { $('saved').textContent = ''; }, 2000);
   };
   $('reset').onclick = () => { fill(TR.DEFAULTS); $('saved').textContent = 'Defaults filled in. Click Save to keep them.'; };
-  const { replies = [] } = await chrome.storage.local.get('replies');
-  $('recent').innerHTML = replies.slice(0, 8).map(r => `<div>${esc(new Date(r.at).toLocaleString([], { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }))} · ${esc(r.lane)} · ${esc(r.to)}${r.mc ? ' · MC ' + esc(r.mc) : ''}${r.ok ? '' : ' · (copied)'}</div>`).join('') || 'None yet.';
 })();

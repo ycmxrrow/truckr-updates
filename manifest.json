@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TRUCKR",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "TRUCKR by Collin Morrow: one-click replies to carriers asking about your DAT and Truckstop loads (PU, DEL, weight, length, commodity, rate, accessorials), cross-checked with Salesforce.",
   "permissions": ["storage", "management", "alarms", "tabs", "scripting", "cookies"],
   "host_permissions": [
