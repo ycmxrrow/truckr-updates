@@ -58,7 +58,11 @@
       n = n.parentElement; if (!n) break;
       const hs = [...n.querySelectorAll('[role="heading"], [id*="subject" i], [class*="subject" i]')]
         .filter(h => !body.contains(h) && (h.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING) && (h.textContent || '').trim().length && (h.textContent || '').length < 200 && !/@/.test(h.textContent));
-      if (hs.length) return hs[hs.length - 1].textContent.trim();
+      // Outlook marks the From / To / date lines as headings too ("Wed 11/11/2026 4:01 PM"): the subject is the one Outlook ids as *_SUBJECT, else the last heading that isn't a header line
+      const subj = hs.filter(h => /_SUBJECT$/i.test(h.id || ''));
+      if (subj.length) return subj[subj.length - 1].textContent.trim();
+      const rest = hs.filter(h => !/_(FROM|TO|CC|BCC|DATETIME|SENDER)$/i.test(h.id || '') && !/^\s*(to|cc|bcc|from)\s*:/i.test(h.textContent) && !/^\s*(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+\d{1,2}\/\d{1,2}\/\d{2,4}|^\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s+\d{1,2}:\d{2}|^\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*$/i.test(h.textContent));
+      if (rest.length) return rest[rest.length - 1].textContent.trim();
     }
     return '';
   }
