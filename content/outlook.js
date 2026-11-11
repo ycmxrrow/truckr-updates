@@ -67,6 +67,18 @@
     return '';
   }
 
+  const REPLIED_RE = /From:\s*Collin Morrow|collin@fidefreight\.com>?\s*(?:\n|.){0,40}?wrote:|Collin Morrow\s*<?collin@fidefreight\.com>?\s*wrote:|On .{4,80}Collin Morrow.{0,60}wrote:/i;
+  // when a message was sent (Outlook's date line above the body), for picking the carrier's first email in a thread
+  function mailTime(body) {
+    let n = body;
+    for (let i = 0; i < 14 && n; i++) {
+      n = n.parentElement; if (!n) break;
+      const d = [...n.querySelectorAll('[id$="_DATETIME"], [aria-label*="Date" i], time')].filter(h => !body.contains(h) && (h.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING));
+      for (let k = d.length - 1; k >= 0; k--) { const t = Date.parse(((d[k].getAttribute('datetime') || d[k].textContent || '').replace(/^\s*[A-Za-z]{3,9},?\s+/, ''))); if (!isNaN(t)) return t; }
+    }
+    return Infinity;
+  }
+
   // ---------- Outlook reply ----------
   const vis = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
   const editors = () => [...document.querySelectorAll('[contenteditable="true"][aria-label*="essage body" i], div[contenteditable="true"][role="textbox"], div.editable[contenteditable="true"]')].filter(vis);
@@ -117,7 +129,11 @@
   .grid label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#a9a69e}
   .grid label.w2{grid-column:span 2}.grid label.w4{grid-column:span 4}
   .msg{font-size:12px;color:#7fdc98}.msg.bad{color:#ff6b6b}
-  .hide{display:none}`;
+  .hide{display:none}
+  .top{cursor:pointer;user-select:none}
+  .chev{color:#a9a69e;font-size:12px;padding:0 4px}
+  .bar.closed [data-body]{display:none}
+  .bar.closed{padding:5px 10px}`;
 
   function summary(l) {
     const bits = [l.equipmentName || l.equipment, l.length ? Math.round(l.length) + "'" : '', l.weight ? Math.round(l.weight).toLocaleString() + ' lbs' : '', l.rate ? TR.money(l.rate) : 'no rate', l.pickupDate ? 'PU ' + TR.md(l.pickupDate) : ''].filter(Boolean);
@@ -126,6 +142,7 @@
   }
   const SRC_NAME = { dat: 'DAT', truckstop: 'Truckstop', loadlink: 'Loadlink', '123loadboard': '123Loadboard' };
 
+  const CLOSED = new Set(); // conversations you've collapsed (stay collapsed while Outlook is open)
   function mount(host, ctx) {
     const root = host.shadowRoot || host.attachShadow({ mode: 'open' });
     const { inq, m, body } = ctx;
@@ -140,7 +157,7 @@
     if (inq.replied) chips.push(`<span class="chip ok">you already answered in this thread</span>`);
     const opts = m.ranked.map((r, i) => `<option value="${i}">${esc(summary(r.load))}</option>`).join('');
     root.innerHTML = `<style>${CSS}</style><div class="bar">
-      <div class="top"><span class="logo">TRUCK<span>R</span></span>${chips.join('')}<span class="sp"></span><button class="x" data-x title="Hide for this email">✕</button></div>
+      <div class="top" data-top title="Click to hide or show TRUCKR"><span class="logo">TRUCK<span>R</span></span>${chips.join('')}<span class="sp"></span><span class="chev" data-chev></span></div><div data-body>
       <div class="row" data-pickrow>${m.ranked.length ? `<select data-pick>${opts}${''}<option value="new">+ Not listed: enter this load's details</option></select>` : `<span class="muted">No posted load matches${inq.lane ? ' ' + esc(TR.laneText(inq.lane.o, inq.lane.d)) : ''}.</span><button class="ghost" data-new>Enter details</button>`}<span class="muted" data-st></span></div>
       <div data-main>
         <div class="row" data-sfrow></div>
@@ -150,13 +167,14 @@
       </div>
       <div class="hide" data-ed>
         <div class="grid">
+          <label>PU date<input data-f="puDate" placeholder="11/12"></label><label>DEL date<input data-f="delDate" placeholder="11/13"></label>
           <label>PU hours<input data-f="pu" placeholder="07:00-15:00"></label><label>DEL hours<input data-f="del" placeholder="07:00-15:00"></label>
           <label>Weight (lbs)<input data-f="weight"></label><label>Length (ft)<input data-f="length"></label>
           <label class="w2">Commodity<input data-f="commodity"></label><label>Rate ($)<input data-f="rate"></label><label>Equipment<input data-f="equipmentName" placeholder="Flatbed"></label>
           <label class="w4">Accessorials / notes (tarps, coil racks, edge protectors...)<input data-f="notes"></label>
         </div>
         <div class="row"><button data-save>Save</button><button class="ghost" data-cancel>Cancel</button><span class="muted">Saved for this load, so the next carrier on this lane gets it too.</span></div>
-      </div></div>`;
+      </div></div></div>`;
     const $ = s => root.querySelector(s);
     const txt = $('[data-txt]'), msg = (t, bad) => { const e = $('[data-msg]'); e.textContent = t; e.className = 'msg' + (bad ? ' bad' : ''); };
     let dirty = false;
@@ -187,7 +205,10 @@
     }
     const nb = $('[data-new]'); if (nb) nb.onclick = () => openEditor(true);
     if (!m.best && !host._synced) $('[data-st]').textContent = 'Checking DAT, Truckstop and Salesforce for this lane…';
-    $('[data-x]').onclick = () => { host._dismissed = true; host.style.display = 'none'; };
+    const barEl = $('.bar'), ck = ctx.conv || inq.subject || '';
+    const setClosed = c => { barEl.classList.toggle('closed', c); $('[data-chev]').textContent = c ? '▸ show' : '▾ hide'; if (ck) { if (c) CLOSED.add(ck); else CLOSED.delete(ck); } };
+    setClosed(CLOSED.has(ck));
+    $('[data-top]').onclick = e => { if (e.target.closest('a')) return; setClosed(!barEl.classList.contains('closed')); };
     $('[data-copy]').onclick = async () => { try { await navigator.clipboard.writeText(txt.value); msg('Copied'); } catch (e) { msg("Couldn't copy", true); } };
     const doReply = async () => {
       if (!load) { msg('Pick the load first', true); return false; }
@@ -209,6 +230,7 @@
       const src = TR.sourceOf(inq, l);
       const H = l.hours ? ((src === 'truckstop' ? [l.hours.ts, l.hours.dat] : [l.hours.dat, l.hours.ts]).find(h => h && (h.pu || h.del)) || {}) : {};
       F('pu').value = H.pu || ''; F('del').value = H.del || '';
+      F('puDate').value = TR.md(l.pickupDate || inq.date || ''); F('delDate').value = TR.md(l.deliveryDate || '');
       F('weight').value = l.weight || ''; F('length').value = l.length || ''; F('commodity').value = l.commodity || ''; F('rate').value = l.rate || '';
       F('equipmentName').value = l.equipmentName || (inq.equipment || ''); F('notes').value = [l.notes, (l.options || []).join(', ')].filter(Boolean).join(', ');
       $('[data-ed]').dataset.isNew = isNew ? '1' : '';
@@ -223,6 +245,9 @@
       const edit = { weight: n(F('weight').value), length: n(F('length').value), commodity: F('commodity').value.trim(), rate: n(F('rate').value), equipmentName: eqn,
         equipment: /van/i.test(eqn) ? 'van' : /hot/i.test(eqn) ? 'hotshot' : /step/i.test(eqn) ? 'stepdeck' : /flat/i.test(eqn) ? 'flatbed' : (load && load.equipment) || '',
         notes: F('notes').value.trim(), options: [], hours: { dat: { pu, del }, ts: { pu, del } } };
+      const iso = v => { const m = String(v || '').match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if (!m) return ''; const now = new Date(); let y = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : now.getFullYear(); if (!m[3] && Number(m[1]) < now.getMonth() - 5) y++; return `${y}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`; };
+      const pd = iso(F('puDate').value), dd = iso(F('delDate').value);
+      if (pd) edit.pickupDate = pd; if (dd) edit.deliveryDate = dd;
       if ($('[data-ed]').dataset.isNew || !load) {
         if (!inq.lane) { msg('No lane in this email to save it under', true); return; }
         const L = Object.assign({ origin: inq.lane.o, dest: inq.lane.d, pickupDate: inq.date || '', picks: [], drops: [], boards: inq.source === 'dat' || inq.source === 'truckstop' ? [inq.source] : [] }, edit);
@@ -242,12 +267,21 @@
   let busy = false;
   async function scan() {
     if (!alive()) { stop(); return; }
-    const seenConv = new Set(); // one TRUCKR bar per conversation (the newest carrier message), never one per message
-    for (const body of bodies()) {
-      const text = body.innerText || '';
+    const seenConv = new Set(); // one TRUCKR bar per conversation, never one per message
+    // TRUCKR is for the carrier's FIRST email. Once you've answered (your message is in the thread, or quoted in theirs), no bar.
+    const all = bodies(), info = new Map(), answered = new Set();
+    for (const b of all) {
+      const subj = subjectFor(b), from = senderFor(b), t = b.innerText || '';
+      const conv = subj.replace(/^(?:\s*(?:re|fw|fwd)\s*:\s*)+/i, '').trim().toLowerCase();
+      info.set(b, { subj, from, t, conv });
+      if (conv && (/@fidefreight\.com$/i.test(from.email || '') || REPLIED_RE.test(t))) answered.add(conv);
+    }
+    // the carrier's first message in the conversation = the oldest one on screen
+    const firstOf = new Map();
+    for (const b of all) { const x = info.get(b); if (!x.conv || /@fidefreight\.com$/i.test(x.from.email || '')) continue; const prev = firstOf.get(x.conv); if (!prev || mailTime(b) < mailTime(prev)) firstOf.set(x.conv, b); }
+    for (const body of all) {
+      const { t: text, subj: subject, from, conv } = info.get(body);
       if (text.length < 3) continue;
-      const subject = subjectFor(body), from = senderFor(body);
-      const conv = subject.replace(/^(?:\s*(?:re|fw|fwd)\s*:\s*)+/i, '').trim().toLowerCase();
       const k = hashOf(subject + '|' + from.email + '|' + text.slice(0, 600)) + ':' + bookGen;
       const existing = body.previousElementSibling && body.previousElementSibling.nodeName === 'TRUCKR-BAR' ? body.previousElementSibling : null;
       // SPOTR's email (a customer's load / quote): TRUCKR never shows on the same email
@@ -259,12 +293,12 @@
       if (inq.skip) { if (existing) existing.remove(); continue; }
       const m = TR.match(inq, BOOK);
       if (!inq.lane && !m.best) { if (existing) existing.remove(); continue; } // no lane and no sure load: not something TRUCKR should guess at
-      if (conv && seenConv.has(conv)) { if (existing) existing.remove(); continue; }
+      if (conv && (answered.has(conv) || seenConv.has(conv) || (firstOf.get(conv) && firstOf.get(conv) !== body))) { if (existing) existing.remove(); continue; }
       if (conv) seenConv.add(conv);
       const host = existing || document.createElement('truckr-bar');
       host.dataset.k = k;
       if (!existing) body.parentElement.insertBefore(host, body);
-      mount(host, { inq, m, body, load: m.best });
+      mount(host, { inq, m, body, load: m.best, conv });
       // nothing matched yet: your posts may have changed since the last sync — pull them once and look again
       if (!m.best && !host._synced) { host._synced = true; chrome.runtime.sendMessage({ type: 'SYNC', mode: 'full' }).catch(() => {}); }
     }
