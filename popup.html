@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>TRUCKR</title>
+<style>
+  :root{--bg:#1f1f1e;--panel:#2a2927;--line:#3b3a37;--fg:#f3f1ec;--muted:#a9a69e;--fide:#ff5e14;--fide-hi:#ff8a4c;--ok:#4ac26b;--bad:#ff6b6b;color-scheme:dark}
+  body{margin:0;width:600px;font:13px "Segoe UI",system-ui,Arial,sans-serif;color:var(--fg);background:var(--bg)}
+  header{background:#171716;border-bottom:2px solid var(--fide);padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+  header b{font-size:17px;letter-spacing:1px}header b span.r{color:var(--fide)}
+  .by{font-weight:400;font-size:11px;opacity:.7;letter-spacing:0}
+  section{padding:10px 14px;border-bottom:1px solid var(--line)}
+  h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  button{cursor:pointer;border-radius:8px;border:1px solid var(--fide);background:var(--fide);color:#fff;font-weight:600;font-size:12px;padding:5px 12px}
+  button:hover{background:var(--fide-hi);border-color:var(--fide-hi)}
+  button.ghost{background:transparent;color:var(--fide-hi)}
+  input,select{font:13px "Segoe UI",Arial;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:4px 6px;box-sizing:border-box}
+  input:focus{outline:none;border-color:var(--fide)}
+  .muted{color:var(--muted);font-size:12px}
+  .stat{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:12px}
+  .pill.ok{border-color:#2f7d46;color:#7fdc98}.pill.bad{border-color:#8a2f2f;color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--muted);text-align:left;font-weight:600;padding:3px 4px;border-bottom:1px solid var(--line)}
+  td{padding:4px;border-bottom:1px solid var(--line);vertical-align:top}
+  .loads{max-height:250px;overflow:auto}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .grid label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}
+  label.chk{flex-direction:row;align-items:center;gap:6px;font-size:12px;color:var(--fg)}
+  #updMsg{display:none;padding:8px 14px;background:rgba(255,94,20,.14);border-bottom:1px solid var(--line);font-size:12px}
+  ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+</style></head>
+<body>
+<header><b>TRUCK<span class="r">R</span> <span class="by">by Collin Morrow</span> <span id="ver" class="by"></span></b>
+  <span><button id="upd">Check for updates</button></span></header>
+<div id="updMsg"></div>
+<section>
+  <h4>Connected</h4>
+  <div class="stat" id="stat"></div>
+  <div style="display:flex;gap:8px;align-items:center"><button class="ghost" id="sync">Sync DAT + Truckstop now</button><span class="muted" id="syncMsg"></span></div>
+</section>
+<section>
+  <h4>Loads TRUCKR answers from (<span id="n">0</span>)</h4>
+  <div class="loads"><table><thead><tr><th>Lane</th><th>PU</th><th>Equip</th><th>Wt / Len</th><th>Rate</th><th>On</th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+<section>
+  <h4>Reply settings</h4>
+  <div class="grid">
+    <label>Greeting<input id="greeting"></label>
+    <label>Default hours (when a load has none)<span style="display:flex;gap:6px"><input id="puHours" style="width:50%" placeholder="PU 07:00-15:00"><input id="delHours" style="width:50%" placeholder="DEL 07:00-15:00"></span></label>
+    <label class="chk"><input type="checkbox" id="showDates"> Put the date on PU / DEL lines</label>
+    <label class="chk"><input type="checkbox" id="noTarpLine"> Open deck with no tarps: "No tarps - strap n go"</label>
+    <label class="chk"><input type="checkbox" id="replyAll"> Use Reply all (default: Reply)</label>
+  </div>
+  <div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button id="save">Save</button><span class="muted" id="saved"></span></div>
+</section>
+<section>
+  <h4>Recent replies</h4>
+  <div id="recent" class="muted"></div>
+</section>
+<script src="lib/truckr.js"></script>
+<script src="popup.js"></script>
+</body></html>

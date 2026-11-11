@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "TRUCKR",
+  "version": "1.1.0",
+  "description": "TRUCKR by Collin Morrow: one-click replies to carriers asking about your DAT and Truckstop loads (PU, DEL, weight, length, commodity, rate, accessorials), cross-checked with Salesforce.",
+  "permissions": ["storage", "management", "alarms", "tabs", "scripting", "cookies"],
+  "host_permissions": [
+    "https://outlook.office.com/*",
+    "https://outlook.office365.com/*",
+    "https://outlook.live.com/*",
+    "https://outlook.cloud.microsoft/*",
+    "https://raw.githubusercontent.com/*",
+    "https://*.my.salesforce.com/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://outlook.office.com/*",
+        "https://outlook.office365.com/*",
+        "https://outlook.live.com/*",
+        "https://outlook.cloud.microsoft/*"
+      ],
+      "js": ["lib/truckr.js", "content/outlook.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TRUCKR",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png" }
+  },
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "commands": {
+    "truckr-reply": {
+      "suggested_key": { "default": "Alt+Shift+T" },
+      "description": "TRUCKR: reply to the carrier email that's open"
+    }
+  }
+}
