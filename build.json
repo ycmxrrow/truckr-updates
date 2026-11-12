@@ -1,5 +1,5 @@
 {
- "version": "1.1.6",
+ "version": "1.1.7",
  "files": {
   "popup.html": 6068,
   "popup.js": 4788,
@@ -11,6 +11,6 @@
   "icons/16.png": 435,
   "icons/128.png": 2266,
   "icons/48.png": 1129,
-  "lib/truckr.js": 47170
+  "lib/truckr.js": 48130
  }
 }
