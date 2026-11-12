@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Update TRUCKR CoWork</title>
+<style>
+  :root{--bg:#1f1f1e;--panel:#2a2927;--line:#3b3a37;--fg:#f3f1ec;--muted:#a9a69e;--fide:#ff5e14;--fide-hi:#ff8a4c;--ok:#7fdc98;--bad:#ff6b6b;color-scheme:dark}
+  body{margin:0;font:14px "Segoe UI",system-ui,Arial,sans-serif;color:var(--fg);background:var(--bg)}
+  main{max-width:620px;margin:40px auto;padding:0 16px}
+  h1{font-size:20px;letter-spacing:1px;margin:0 0 4px}h1 span{color:var(--fide)}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--fide);border-radius:10px;padding:16px 18px;margin-top:16px}
+  button{cursor:pointer;border-radius:8px;border:1px solid var(--fide);background:var(--fide);color:#fff;font-weight:600;font-size:14px;padding:8px 18px}
+  button:hover{background:var(--fide-hi)}button:disabled{opacity:.5;cursor:default}
+  .muted{color:var(--muted);font-size:13px}.ok{color:var(--ok)}.bad{color:var(--bad)}
+  code{background:#171716;padding:1px 6px;border-radius:5px}
+  #log{margin-top:12px;font:12px Consolas,monospace;color:var(--muted);white-space:pre-wrap}
+</style></head>
+<body><main>
+  <h1>TRUCK<span>R</span> CoWork <span class="muted" style="letter-spacing:0;font-size:13px;color:var(--muted)">update</span></h1>
+  <div class="muted" id="vers"></div>
+  <div class="card">
+    <div id="msg">Checking GitHub…</div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button id="go" hidden>Update now</button><button id="link" hidden>Choose my TRUCKR CoWork folder</button></div>
+    <div class="muted" id="hint" style="margin-top:10px"></div>
+    <div id="log"></div>
+  </div>
+</main><script src="update.js"></script></body></html>

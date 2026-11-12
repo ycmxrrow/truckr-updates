@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "skipSubject": [],
+  "skipSenders": [],
+  "accessorials": [
+    { "re": "\\bppe\\b", "text": "PPE required", "key": "ppe" },
+    { "re": "\\bphotos?\\s+required\\b", "text": "Photos required", "key": "photos" }
+  ]
+}

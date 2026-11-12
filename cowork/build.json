@@ -1,0 +1,24 @@
+{
+ "version": "1.0.0",
+ "files": {
+  "README.txt": 3783,
+  "background.js": 24395,
+  "content/board.js": 3297,
+  "content/dat-main.js": 3120,
+  "content/outlook.js": 27752,
+  "icons/128.png": 6578,
+  "icons/16.png": 625,
+  "icons/32.png": 1477,
+  "icons/48.png": 2086,
+  "lib/boards.js": 5785,
+  "lib/truckr.js": 67171,
+  "manifest.json": 1961,
+  "offscreen.html": 113,
+  "offscreen.js": 1822,
+  "popup.html": 9078,
+  "popup.js": 12445,
+  "rules.json": 237,
+  "update.html": 1717,
+  "update.js": 6360
+ }
+}

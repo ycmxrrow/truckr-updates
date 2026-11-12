@@ -1,0 +1,103 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>TRUCKR CoWork</title>
+<style>
+  :root{--bg:#1f1f1e;--panel:#2a2927;--line:#3b3a37;--fg:#f3f1ec;--muted:#a9a69e;--fide:#ff5e14;--fide-hi:#ff8a4c;--ok:#4ac26b;--bad:#ff6b6b;color-scheme:dark}
+  body{margin:0;width:600px;font:13px "Segoe UI",system-ui,Arial,sans-serif;color:var(--fg);background:var(--bg)}
+  header{background:#171716;border-bottom:2px solid var(--fide);padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+  header b{font-size:17px;letter-spacing:1px}header b span.r{color:var(--fide)}
+  .by{font-weight:400;font-size:11px;opacity:.7;letter-spacing:0}
+  section{padding:10px 14px;border-bottom:1px solid var(--line)}
+  h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  button{cursor:pointer;border-radius:8px;border:1px solid var(--fide);background:var(--fide);color:#fff;font-weight:600;font-size:12px;padding:5px 12px}
+  button:hover{background:var(--fide-hi);border-color:var(--fide-hi)}
+  button.ghost{background:transparent;color:var(--fide-hi)}
+  input,select{font:13px "Segoe UI",Arial;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:4px 6px;box-sizing:border-box}
+  input:focus{outline:none;border-color:var(--fide)}
+  .muted{color:var(--muted);font-size:12px}
+  .stat{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:12px}
+  .pill.ok{border-color:#2f7d46;color:#7fdc98}.pill.bad{border-color:#8a2f2f;color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--muted);text-align:left;font-weight:600;padding:3px 4px;border-bottom:1px solid var(--line)}
+  td{padding:4px;border-bottom:1px solid var(--line);vertical-align:top}
+  .loads{max-height:250px;overflow:auto}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .grid label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}
+  label.chk{flex-direction:row;align-items:center;gap:6px;font-size:12px;color:var(--fg)}
+  #updMsg{display:none;padding:8px 14px;background:rgba(255,94,20,.14);border-bottom:1px solid var(--line);font-size:12px}
+  .icon{background:transparent;border:1px solid var(--line);color:var(--fg);padding:4px 7px;display:inline-flex;align-items:center;justify-content:center}
+  .icon:hover{background:var(--panel);border-color:var(--fide)}
+  .icon svg{width:16px;height:16px;fill:currentColor}
+  .hdr-r{display:flex;gap:8px;align-items:center}
+  .view[hidden]{display:none}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .stack label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  .stack input[type=text],.stack textarea{width:100%}
+  textarea{font:13px "Segoe UI",Arial;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:4px 6px;box-sizing:border-box;resize:vertical;min-height:44px}
+  textarea:focus{outline:none;border-color:var(--fide)}
+  .stack label.chk{flex-direction:row;align-items:center;gap:8px;font-size:12px;color:var(--fg)}
+  .sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .tabs{display:flex;gap:4px;padding:8px 14px 0;border-bottom:1px solid var(--line)}
+  .tab{background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);padding:6px 12px;font-weight:600}
+  .tab:hover{background:var(--panel);border-color:transparent}
+  .tab.on{background:var(--panel);border-color:var(--line);color:var(--fg)}
+  .acct{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel);display:flex;flex-direction:column;gap:6px}
+  .acct .h{display:flex;align-items:center;gap:8px}.acct .h b{font-size:13px}.acct .h .sp{flex:1}
+  .acct .who{font-size:12px}.acct .warn{font-size:12px;color:#ffd257}
+  .acct .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .acct .chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#6b6862;display:inline-block}.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.mid{background:#d9a400}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .row2 label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  .row2 input{width:100%}
+  #setupNote{display:none;padding:10px 14px;background:rgba(255,94,20,.14);border-bottom:1px solid var(--line);font-size:12.5px}
+  ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+</style></head>
+<body>
+<header><b>TRUCK<span class="r">R</span> <span class="by">CoWork</span> <span id="ver" class="by"></span></b>
+  <span class="hdr-r"><button id="upd">Check for updates</button>
+    <button id="gear" class="icon" title="Settings and accounts" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.63l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.74 8.85a.5.5 0 0 0 .12.63l2.03 1.58c-.05.31-.08.63-.08.94s.02.63.07.94l-2.03 1.58a.5.5 0 0 0-.12.63l1.92 3.32c.13.22.39.3.6.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.63l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg></button></span></header>
+<div id="updMsg"></div>
+<div id="vMain" class="view">
+<section>
+  <h4>Connected</h4>
+  <div class="stat" id="stat"></div>
+  <div class="muted" id="syncMsg">Syncs on its own every minute while Outlook is open, and right away when a carrier asks about a lane it doesn't know yet.</div>
+</section>
+</div>
+<div id="vSettings" class="view" hidden>
+<section style="display:flex;align-items:center;gap:10px;border-bottom:none;padding-bottom:0">
+  <button id="back" class="icon" title="Back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+  <b style="font-size:14px">Settings</b>
+</section>
+<div class="tabs"><button class="tab" data-tab="accounts">Accounts</button><button class="tab" data-tab="reply">Reply settings</button></div>
+<div id="setupNote">Welcome to TRUCKR CoWork. Check your name, then sign in to <b>your own</b> DAT One, Truckstop and Salesforce below, so TRUCKR CoWork answers carriers from <b>your</b> loads.</div>
+<div id="tAccounts">
+<section class="stack">
+  <div class="row2"><label>Your name<input type="text" id="myName" placeholder="First Last"></label><label>Your email<input type="text" id="myEmail" placeholder="you@fidefreight.com"></label></div>
+  <span class="sub">Filled in from your Salesforce sign-in. Used to spot your own replies in a thread (TRUCKR CoWork only shows on a carrier's first email).</span>
+  <div id="accts" class="stack"></div>
+  <label class="chk"><input type="checkbox" id="hiddenPage"> Check DAT and Truckstop without opening tabs (a hidden page borrows your sign-in for a moment)</label>
+  <div style="display:flex;gap:8px;align-items:center"><button id="checkAll">Check all sign-ins</button><button id="saveAcct" class="ghost">Save</button><span class="muted" id="acctMsg"></span></div>
+</section>
+</div>
+<div id="tReply" hidden>
+<section class="stack">
+  <label>Greeting<input type="text" id="greeting"><span class="sub">First line of every reply.</span></label>
+  <label>Default pickup hours (when a load has none)<input type="text" id="puHours" placeholder="07:00-15:00"></label>
+  <label>Default delivery hours (when a load has none)<input type="text" id="delHours" placeholder="07:00-15:00"></label>
+  <label>Reply when a load is covered or cancelled<textarea id="coveredText" rows="2"></textarea></label>
+  <label class="chk"><input type="checkbox" id="showDates"> Put the date on PU / DEL lines</label>
+  <label class="chk"><input type="checkbox" id="noTarpLine"> Open deck with no tarps: add "No tarps - strap n go"</label>
+  <label class="chk"><input type="checkbox" id="replyAll"> Use Reply all (default: Reply)</label>
+  <label class="chk"><input type="checkbox" id="showEquipment"> Add an "Equipment - " line (Reefer, Flatbed, RGN / Lowboy...)</label>
+  <label class="chk"><input type="checkbox" id="showTemp"> Reefers: add "Temp - 34°F (continuous)"</label>
+  <label class="chk"><input type="checkbox" id="showPieces"> Add pallets / pieces and dims when the load has them</label>
+  <label class="chk"><input type="checkbox" id="showRef"> Add the load's reference # at the bottom</label>
+  <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><button id="save">Save</button><button id="reset" class="ghost">Reset to defaults</button><span class="muted" id="saved"></span></div>
+</section>
+</div>
+</div>
+<script src="lib/truckr.js"></script>
+<script src="popup.js"></script>
+</body></html>
