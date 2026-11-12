@@ -138,7 +138,7 @@
   function summary(l) {
     const bits = [l.equipmentName || l.equipment, l.length ? Math.round(l.length) + "'" : '', l.weight ? Math.round(l.weight).toLocaleString() + ' lbs' : '', l.rate ? TR.money(l.rate) : 'no rate', l.pickupDate ? 'PU ' + TR.md(l.pickupDate) : ''].filter(Boolean);
     const src = l.src === 'manual' ? 'saved by you' : l.customer ? l.customer : l.src === 'spotr' ? 'SPOTR' : l.src;
-    return `${l.covered ? '[COVERED] ' : l.cancelled ? '[CANCELLED] ' : ''}${TR.laneText(l.origin, l.dest)}${l.picks && l.picks.length + l.drops.length > 2 ? ` (${l.picks.length} PU ${l.drops.length} DEL)` : ''} · ${bits.join(' · ')} · ${src}${l.sf ? ' · ' + l.sf.name : ''}${l.boards && l.boards.length ? ' · on ' + l.boards.map(b => b === 'dat' ? 'DAT' : 'Truckstop').join(' + ') : ''}${l.down ? ' · not on the boards now' : ''}`;
+    return `${l.covered ? '[COVERED] ' : l.cancelled ? '[CANCELLED] ' : ''}${TR.laneText(l.origin, l.dest)}${l.picks && l.picks.length + l.drops.length > 2 ? ` (${l.picks.length} PU ${l.drops.length} DEL)` : ''} · ${bits.join(' · ')} · ${src}${l.sf ? ' · ' + l.sf.name : ''}${l.boards && l.boards.length ? ' · on ' + l.boards.map(b => b === 'dat' ? 'DAT' : 'Truckstop').join(' + ') : ''}${l.down ? ' · not on the boards now' : ''}${l.sameBoardTwice ? ' · posted ' + l.copies + 'x' : ''}`;
   }
   const SRC_NAME = { dat: 'DAT', truckstop: 'Truckstop', loadlink: 'Loadlink', '123loadboard': '123Loadboard' };
 
