@@ -1,16 +1,21 @@
 {
- "version": "1.1.8",
+ "version": "1.1.9",
  "files": {
-  "popup.html": 6068,
-  "popup.js": 4788,
-  "manifest.json": 1444,
+  "offscreen.html": 113,
+  "popup.html": 8298,
+  "popup.js": 12242,
+  "manifest.json": 2129,
   "README.txt": 5407,
-  "background.js": 16561,
-  "content/outlook.js": 27055,
+  "offscreen.js": 1822,
+  "background.js": 28152,
+  "content/outlook.js": 27192,
+  "content/dat-main.js": 3120,
+  "content/board.js": 3297,
   "icons/32.png": 865,
   "icons/16.png": 435,
   "icons/128.png": 2266,
   "icons/48.png": 1129,
-  "lib/truckr.js": 51046
+  "lib/boards.js": 5922,
+  "lib/truckr.js": 51787
  }
 }
