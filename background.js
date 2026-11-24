@@ -186,7 +186,7 @@ async function sync(mode) {
     if (r.ok) {
       Object.entries(r.live || {}).forEach(([k, v]) => { status.live[k] = v && v.ok ? { ok: true, n: (v.loads || []).length } : { ok: false, error: (v && v.error) || 'no answer' }; });
       // keep the last good board list when a quick ("light") check couldn't reach a board this time
-      if (st.lastLive) Object.keys(st.lastLive).forEach(k => { if (!(r.live && r.live[k] && r.live[k].ok) && st.lastLive[k] && Date.now() - st.lastLive[k].at < 30 * 60000) { r.live = r.live || {}; r.live[k] = st.lastLive[k].v; status.live[k] = { ok: true, cached: true, n: (st.lastLive[k].v.loads || []).length, error: (status.live[k] && status.live[k].error) || '' }; } });
+      if (st.lastLive) Object.keys(st.lastLive).forEach(k => { if (!(r.live && r.live[k] && r.live[k].ok) && st.lastLive[k] && Date.now() - st.lastLive[k].at < 10 * 60000) { r.live = r.live || {}; r.live[k] = st.lastLive[k].v; status.live[k] = { ok: true, cached: true, n: (st.lastLive[k].v.loads || []).length, error: (status.live[k] && status.live[k].error) || '' }; } });
       const keep = {}; Object.entries(r.live || {}).forEach(([k, v]) => { if (v && v.ok && !(status.live[k] && status.live[k].cached)) keep[k] = { at: Date.now(), v }; });
       if (Object.keys(keep).length) { const { lastLive = {} } = await chrome.storage.local.get('lastLive'); await chrome.storage.local.set({ lastLive: Object.assign(lastLive, keep) }); }
       const { lastLive: ll } = await chrome.storage.local.get('lastLive'); st.lastLive = ll;
