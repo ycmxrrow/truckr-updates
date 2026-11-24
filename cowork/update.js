@@ -9,6 +9,14 @@
   const msg = (t, cls) => { $('msg').innerHTML = t; $('msg').className = cls || ''; };
   const cmpVer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 4; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
 
+  // read-only GitHub key for a private repo: saved only in this browser, sent only to GitHub
+  const ghFetch = async (url, opt) => { opt = opt || {}; const h = Object.assign({}, opt.headers); const { ghKey } = await chrome.storage.local.get('ghKey');
+    if (ghKey && /^https:\/\/(raw\.githubusercontent\.com|api\.github\.com)\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+    return fetch(url, Object.assign({}, opt, { headers: h })); };
+  const showKey = async () => { const { ghKey } = await chrome.storage.local.get('ghKey'); $('keySt').textContent = ghKey ? 'Key saved in this browser.' : 'No key saved.'; };
+  $('keySave').onclick = async () => { const k = $('key').value.trim(); if (!k) return; await chrome.storage.local.set({ ghKey: k }); $('key').value = ''; location.reload(); };
+  await showKey();
+
   // the folder handle is kept in this extension's own database, so you only pick the folder once
   const db = () => new Promise((res, rej) => { const r = indexedDB.open('truckrc', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const kv = async (k, v) => { const d = await db(); return new Promise((res, rej) => { const tx = d.transaction('kv', v === undefined ? 'readonly' : 'readwrite'); const st = tx.objectStore('kv'); const q = v === undefined ? st.get(k) : st.put(v, k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); };
@@ -16,9 +24,10 @@
   // the exact commit, so every file comes from the same version (no half-updated mix while GitHub refreshes)
   async function latest() {
     let sha = 'main';
-    try { const r = await fetch(`https://api.github.com/repos/${REPO}/commits/main`, { headers: { Accept: 'application/vnd.github.sha' }, cache: 'no-store' }); if (r.ok) sha = (await r.text()).trim(); } catch (e) { /* fall back to main */ }
+    try { const r = await ghFetch(`https://api.github.com/repos/${REPO}/commits/main`, { headers: { Accept: 'application/vnd.github.sha' }, cache: 'no-store' }); if (r.ok) sha = (await r.text()).trim(); } catch (e) { /* fall back to main */ }
     const base = `https://raw.githubusercontent.com/${REPO}/${sha}/${DIR}`;
-    const b = await fetch(base + 'build.json' + (sha === 'main' ? '?t=' + Date.now() : ''), { cache: 'no-store' });
+    const b = await ghFetch(base + 'build.json' + (sha === 'main' ? '?t=' + Date.now() : ''), { cache: 'no-store' });
+    if (b.status === 404 || b.status === 401 || b.status === 403) throw new Error('GitHub can\'t show the update without your key (or the key expired). Paste your GitHub key below.');
     if (!b.ok) throw new Error('GitHub ' + b.status);
     return { base, sha, build: await b.json() };
   }
@@ -71,7 +80,7 @@
       const got = {};
       msg(`Downloading v${L.build.version}…`);
       for (const f of order) {
-        const r = await fetch(L.base + f.split('/').map(encodeURIComponent).join('/'), { cache: 'no-store' });
+        const r = await ghFetch(L.base + f.split('/').map(encodeURIComponent).join('/'), { cache: 'no-store' });
         if (!r.ok) throw new Error(`${f}: GitHub ${r.status}`);
         const buf = await r.arrayBuffer();
         const want = L.build.files[f];

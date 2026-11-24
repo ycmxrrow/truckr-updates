@@ -219,9 +219,17 @@ function fullSoon() { if (fullT || Date.now() - fullAsked < 2 * 60000) return; f
 const dedupe = list => list.filter((b, i) => list.findIndex(x => x.uid === b.uid) === i);
 
 // ---------- rules + version from GitHub ----------
+// ---------- read-only GitHub key: lets TRUCKR read a PRIVATE truckr-updates repo (saved only in this browser, sent only to GitHub) ----------
+let ghLastStatus = 0;
+async function ghFetch(url, opt) {
+  opt = opt || {}; const h = Object.assign({}, opt.headers);
+  const { ghKey } = await chrome.storage.local.get('ghKey');
+  if (ghKey && /^https:\/\/(raw\.githubusercontent\.com|api\.github\.com)\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+  const r = await fetch(url, Object.assign({}, opt, { headers: h })); ghLastStatus = r.status; return r;
+}
 async function pullRules() {
   try {
-    const r = await fetch(RULES_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    const r = await ghFetch(RULES_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return { ok: false, error: 'GitHub ' + r.status };
     const rules = await r.json();
     await chrome.storage.local.set({ rules, rulesAt: Date.now() });
@@ -230,7 +238,7 @@ async function pullRules() {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 async function githubVersion() {
-  try { const r = await fetch(GH_BUILD_URL + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return null; return (await r.json()).version || null; } catch (e) { return null; }
+  try { const r = await ghFetch(GH_BUILD_URL + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return null; return (await r.json()).version || null; } catch (e) { return null; }
 }
 
 // ---------- updates: same as SPOTR — new files land in the TRUCKR folder, then "Check for updates" switches over ----------
@@ -254,6 +262,7 @@ async function checkForUpdate() {
     return { status: 'update_available', version: build.version, rules: rules.ok };
   }
   if (gh && cmpVer(gh, running) > 0) return { status: 'github_newer', version: gh, rules: rules.ok };
+  if (!gh && [401, 403, 404].includes(ghLastStatus)) return { status: 'need_key', version: running, rules: rules.ok };
   return { status: 'no_update', version: running, rules: rules.ok, rulesError: rules.ok ? '' : rules.error };
 }
 

@@ -197,9 +197,17 @@ async function sync(mode) {
 }
 
 // ---------- reply rules + updates from GitHub (ycmxrrow/truckr-updates, folder cowork/) ----------
+// ---------- read-only GitHub key: lets TRUCKR read a PRIVATE truckr-updates repo (saved only in this browser, sent only to GitHub) ----------
+let ghLastStatus = 0;
+async function ghFetch(url, opt) {
+  opt = opt || {}; const h = Object.assign({}, opt.headers);
+  const { ghKey } = await chrome.storage.local.get('ghKey');
+  if (ghKey && /^https:\/\/(raw\.githubusercontent\.com|api\.github\.com)\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+  const r = await fetch(url, Object.assign({}, opt, { headers: h })); ghLastStatus = r.status; return r;
+}
 async function pullRules() {
   try {
-    const r = await fetch(RULES_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    const r = await ghFetch(RULES_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return { ok: false, error: 'GitHub ' + r.status };
     const rules = await r.json();
     await chrome.storage.local.set({ rules, rulesAt: Date.now() });
@@ -207,7 +215,7 @@ async function pullRules() {
     return { ok: true, rules };
   } catch (e) { return { ok: false, error: e.message }; }
 }
-async function githubVersion() { try { const r = await fetch(GH_BUILD_URL + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return null; return (await r.json()).version || null; } catch (e) { return null; } }
+async function githubVersion() { try { const r = await ghFetch(GH_BUILD_URL + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return null; return (await r.json()).version || null; } catch (e) { return null; } }
 const cmpVer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 4; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
 async function diskBuild() { const r = await fetch(chrome.runtime.getURL('build.json') + '?t=' + Date.now(), { cache: 'no-store' }); return r.json(); }
 async function checkForUpdate() {
@@ -218,6 +226,7 @@ async function checkForUpdate() {
   if (build && cmpVer(build.version, running) > 0) { setTimeout(() => chrome.runtime.reload(), 250); return { status: 'update_available', version: build.version, rules: rules.ok }; }
   const gh = await githubVersion();
   if (gh && cmpVer(gh, running) > 0) return { status: 'github_newer', version: gh, rules: rules.ok };
+  if (!gh && [401, 403, 404].includes(ghLastStatus)) return { status: 'need_key', version: running, rules: rules.ok };
   return { status: 'no_update', version: running, rules: rules.ok, rulesError: rules.ok ? '' : rules.error };
 }
 

@@ -18,6 +18,7 @@
     const rules = r && r.rules ? ' Reply rules refreshed.' : '';
     if (!r) updMsg('Could not check right now.');
     else if (r.status === 'update_available') updMsg(`Switching to v${r.version}… reopen this window in a second.`);
+    else if (r.status === 'need_key') { updMsg(`GitHub needs your key to check for updates. <button id="go">Add GitHub key</button>`, true); $('go').onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('update.html#key') }); }
     else if (r.status === 'github_newer') { updMsg(`v${esc(r.version)} is ready. <button id="go">Update now</button>${esc(rules)}`, true); $('go').onclick = openUpdater; }
     else updMsg(`You're up to date (v${ver}).${rules}`);
   };
