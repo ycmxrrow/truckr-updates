@@ -3,7 +3,8 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const ver = chrome.runtime.getManifest().version;
   $('ver').textContent = 'v' + ver;
-  const updMsg = t => { $('updMsg').style.display = 'block'; $('updMsg').textContent = t; };
+  const updMsg = (t, html) => { $('updMsg').style.display = 'block'; if (html) $('updMsg').innerHTML = t; else $('updMsg').textContent = t; };
+  const openUpdater = () => chrome.tabs.create({ url: chrome.runtime.getURL('update.html') });
   const { justUpdated } = await chrome.storage.local.get('justUpdated');
   if (justUpdated && Date.now() - justUpdated.at < 3 * 864e5) updMsg(`Updated to v${justUpdated.to} (was v${justUpdated.from}).`);
 
@@ -15,7 +16,7 @@
     const rules = r && r.rules ? ' Reply rules refreshed from GitHub.' : '';
     if (!r) updMsg('Could not check right now.');
     else if (r.status === 'update_available') updMsg(`Installing v${r.version}… done in a second. Reopen this window to see it.`);
-    else if (r.status === 'github_newer') updMsg(`v${r.version} is on GitHub but not in your TRUCKR folder yet. Ask Claude to install it, then click again.${rules}`);
+    else if (r.status === 'github_newer') { updMsg(`v${esc(r.version)} is ready. <button id="go">Update now</button>${esc(rules)}`, true); $('go').onclick = openUpdater; }
     else if (r.status === 'syncing') updMsg(`v${r.version} isn't fully copied yet. Click again in a moment.`);
     else updMsg(`You're up to date (v${ver}).${rules}`);
   };
