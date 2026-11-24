@@ -279,7 +279,9 @@
     // the carrier's first message in the conversation = the oldest one on screen
     const firstOf = new Map();
     for (const b of all) { const x = info.get(b); if (!x.conv || /@fidefreight\.com$/i.test(x.from.email || '')) continue; const prev = firstOf.get(x.conv); if (!prev || mailTime(b) < mailTime(prev)) firstOf.set(x.conv, b); }
+    const ownFolder = /\/(sentitems|drafts|outbox)\b/i.test(location.pathname + location.hash); // your sent mail: never a carrier inquiry
     for (const body of all) {
+      if (ownFolder) { const ex = body.previousElementSibling; if (ex && ex.nodeName === 'TRUCKR-BAR') ex.remove(); continue; }
       const { t: text, subj: subject, from, conv } = info.get(body);
       if (text.length < 3) continue;
       const k = hashOf(subject + '|' + from.email + '|' + text.slice(0, 600)) + ':' + bookGen;
