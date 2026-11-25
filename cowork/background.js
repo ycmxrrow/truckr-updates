@@ -202,7 +202,12 @@ let ghLastStatus = 0;
 async function ghFetch(url, opt) {
   opt = opt || {}; const h = Object.assign({}, opt.headers);
   const { ghKey } = await chrome.storage.local.get('ghKey');
-  if (ghKey && /^https:\/\/(raw\.githubusercontent\.com|api\.github\.com)\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+  if (ghKey) {
+    // with a key, read files through api.github.com (it accepts every kind of GitHub key; raw.githubusercontent.com does not always)
+    const m = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/([^?]+)/.exec(url);
+    if (m) { url = `https://api.github.com/repos/${m[1]}/${m[2]}/contents/${m[4]}?ref=${m[3]}`; h.Accept = 'application/vnd.github.raw'; }
+    if (/^https:\/\/api\.github\.com\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+  }
   const r = await fetch(url, Object.assign({}, opt, { headers: h })); ghLastStatus = r.status; return r;
 }
 async function pullRules() {

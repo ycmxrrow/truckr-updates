@@ -1,5 +1,5 @@
 {
- "version": "1.1.15",
+ "version": "1.1.16",
  "files": {
   "offscreen.html": 113,
   "popup.html": 8298,
@@ -9,8 +9,8 @@
   "update.html": 2240,
   "offscreen.js": 1822,
   "rules.json": 237,
-  "update.js": 7274,
-  "background.js": 28831,
+  "update.js": 8736,
+  "background.js": 29188,
   "content/outlook.js": 27459,
   "content/dat-main.js": 3120,
   "content/board.js": 3297,

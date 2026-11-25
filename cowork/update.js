@@ -11,8 +11,25 @@
 
   // read-only GitHub key for a private repo: saved only in this browser, sent only to GitHub
   const ghFetch = async (url, opt) => { opt = opt || {}; const h = Object.assign({}, opt.headers); const { ghKey } = await chrome.storage.local.get('ghKey');
-    if (ghKey && /^https:\/\/(raw\.githubusercontent\.com|api\.github\.com)\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+    if (ghKey) {
+      // with a key, read files through api.github.com (it accepts every kind of GitHub key; raw.githubusercontent.com does not always)
+      const m = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/([^?]+)/.exec(url);
+      if (m) { url = `https://api.github.com/repos/${m[1]}/${m[2]}/contents/${m[4]}?ref=${m[3]}`; h.Accept = 'application/vnd.github.raw'; }
+      if (/^https:\/\/api\.github\.com\//i.test(url)) h.Authorization = 'Bearer ' + ghKey;
+    }
     return fetch(url, Object.assign({}, opt, { headers: h })); };
+  // tells you exactly what GitHub thinks of the saved key
+  const keyCheck = async () => {
+    const { ghKey } = await chrome.storage.local.get('ghKey'); if (!ghKey) return '';
+    try {
+      const r = await fetch(`https://api.github.com/repos/${REPO}`, { headers: { Authorization: 'Bearer ' + ghKey, Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+      if (r.ok) return '';
+      if (r.status === 401) return 'GitHub says this key isn\'t valid (a typo, or it expired). Make a new one and paste it below.';
+      if (r.status === 404) return `This key can't see <b>${REPO}</b>. On GitHub, open the key (Settings &gt; Developer settings &gt; Fine-grained tokens), and under Repository access add <b>${REPO.split('/')[1]}</b>. Then click Check again.`;
+      if (r.status === 403) return 'GitHub turned the key down (403). On GitHub, give the key Contents: Read-only permission, then click Check again.';
+      return 'GitHub answered ' + r.status + ' for this key.';
+    } catch (e) { return 'Could not reach GitHub: ' + e.message; }
+  };
   const showKey = async () => { const { ghKey } = await chrome.storage.local.get('ghKey'); $('keySt').textContent = ghKey ? 'Key saved in this browser.' : 'No key saved.'; };
   $('keySave').onclick = async () => { const k = $('key').value.trim(); if (!k) return; await chrome.storage.local.set({ ghKey: k }); $('key').value = ''; location.reload(); };
   await showKey();
@@ -52,7 +69,7 @@
   }
 
   let L = null;
-  try { L = await latest(); } catch (e) { msg('Could not reach GitHub right now: ' + e.message, 'bad'); return; }
+  try { L = await latest(); } catch (e) { const why = await keyCheck(); msg(why || ('Could not reach GitHub right now: ' + e.message), 'bad'); return; }
   $('vers').textContent = `You have v${running}. GitHub has v${L.build.version}.`;
   if (cmpVer(L.build.version, running) <= 0) { msg(`You're up to date (v${running}).`, 'ok'); return; }
 

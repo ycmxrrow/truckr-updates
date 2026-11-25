@@ -1,7 +1,7 @@
 {
  "manifest_version": 3,
  "name": "TRUCKR CoWork",
- "version": "1.0.1",
+ "version": "1.0.2",
  "description": "TRUCKR CoWork: one-click replies to carriers asking about YOUR DAT and Truckstop loads, cross-checked with YOUR Salesforce loads. Every trailer type, reefer temps, hazmat, pallets, dims and reference #s.",
  "permissions": [
   "storage",
